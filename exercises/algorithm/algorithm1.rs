@@ -2,11 +2,11 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
 use std::vec::*;
+use std::cmp::PartialOrd;
 
 #[derive(Debug)]
 struct Node<T> {
@@ -29,13 +29,13 @@ struct LinkedList<T> {
     end: Option<NonNull<Node<T>>>,
 }
 
-impl<T> Default for LinkedList<T> {
+impl<T: PartialOrd> Default for LinkedList<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> LinkedList<T> {
+impl<T: PartialOrd> LinkedList<T> {
     pub fn new() -> Self {
         Self {
             length: 0,
@@ -69,15 +69,58 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+
+    pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
+    {
+        let mut ptr_a = list_a.start;
+        let mut ptr_b = list_b.start;
+        let mut list_c = LinkedList::<T>::new();
+        while ptr_a.is_some() || ptr_b.is_some() {
+            let mut ptr = {
+                if ptr_b.is_none() {
+                    &mut ptr_a
+                } else if ptr_a.is_none() {
+                    &mut ptr_b
+                } else {
+                    unsafe {
+                        let a_val_ptr = &(*ptr_a.unwrap().as_ptr()).val;
+                        let b_val_ptr = &(*ptr_b.unwrap().as_ptr()).val;
+                        if a_val_ptr < b_val_ptr {
+                            &mut ptr_a
+                        } else {
+                            &mut ptr_b
+                        }
+                    }
+                }
+            };
+
+            if let Some(ptr_nonnull) = *ptr {
+                match list_c.start {
+                    Some(start) => {
+                        *ptr = unsafe {
+                            let old_ptr_next = (*ptr_nonnull.as_ptr()).next;
+                            (*list_c.end.unwrap().as_ptr()).next = *ptr;
+                            (*ptr_nonnull.as_ptr()).next = None;
+                            old_ptr_next
+                        };
+                        list_c.end = Some(ptr_nonnull);
+                    }
+                    _ => {
+                        list_c.end = *ptr;
+                        list_c.start = list_c.end;
+
+                        let old_ptr = *ptr;
+                        *ptr = unsafe { (*ptr_nonnull.as_ptr()).next };
+                        unsafe {
+                            (*ptr_nonnull.as_ptr()).next = None;
+                        }
+                    }
+                }
+            }
         }
-	}
+
+        list_c
+    }
 }
 
 impl<T> Display for LinkedList<T>
