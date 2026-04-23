@@ -2,10 +2,10 @@
 	heap
 	This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
 
 use std::cmp::Ord;
 use std::default::Default;
+use std::mem::swap;
 
 pub struct Heap<T>
 where
@@ -37,7 +37,58 @@ where
     }
 
     pub fn add(&mut self, value: T) {
-        //TODO
+        self.count += 1;
+        self.items.push(value);
+        self.percolate_up(self.count);
+    }
+
+    pub fn pop(&mut self) -> Option<T> {
+        if self.is_empty() {
+            None
+        } else {
+            let elem = self.items.swap_remove(1);
+            self.count -= 1;
+            self.percolate_down(1);
+            Some(elem)
+        }
+    }
+
+    fn percolate_up(&mut self, idx: usize) {
+        let mut idx = idx;
+        while idx != 1 {
+            let p = self.parent_idx(idx);
+            if !(self.comparator)(&self.items[idx], &self.items[p]) {
+                break;
+            }
+            let slices = self.items.split_at_mut(idx);
+            swap(&mut slices.0[p], &mut slices.1[0]);
+            idx = p;
+        }
+    }
+
+    fn percolate_down(&mut self, mut idx: usize) {
+        let len = self.len();
+
+        loop {
+            let lc_idx = self.left_child_idx(idx);
+            let rc_idx = self.right_child_idx(idx);
+            let mut largest = idx;
+
+            if lc_idx <= self.len() && (self.comparator)(&self.items[lc_idx], &self.items[largest]) {
+                largest = lc_idx;
+            }
+
+            if rc_idx <= self.len() && (self.comparator)(&self.items[rc_idx], &self.items[largest]) {
+                largest = rc_idx;
+            }
+
+            if largest == idx {
+                break;
+            }
+
+            self.items.swap(idx, largest);
+            idx = largest;
+        }
     }
 
     fn parent_idx(&self, idx: usize) -> usize {
@@ -57,7 +108,6 @@ where
     }
 
     fn smallest_child_idx(&self, idx: usize) -> usize {
-        //TODO
 		0
     }
 }
@@ -84,8 +134,11 @@ where
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
-        //TODO
-		None
+        if self.is_empty() {
+            None
+        } else {
+            self.pop()
+        }
     }
 }
 
